@@ -1,0 +1,234 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+
+typedef struct		stack
+{
+	unsigned int 	size;
+	int 			top;
+	char 			*array;
+	int             *array_int;
+}					Stack;
+
+int     is_operator(char c);
+Stack	*createStack(unsigned int size)
+{
+	Stack *stack = (Stack*) malloc(sizeof(Stack));
+	stack->size = size;
+	stack->top = -1;
+	stack->array = (char*) malloc(stack->size * sizeof(char));
+	stack->array_int = (int *) malloc(stack->size * sizeof(int));
+	return stack;
+}
+
+void	push(Stack *stack, char c)
+{
+	stack->array[++stack->top] = c;
+}
+
+void	push_int(Stack *stack, int i)
+{
+	stack->array_int[++stack->top] = i;
+}
+
+int		pop_int(Stack *stack)
+{
+	return stack->array_int[stack->top--];
+}
+
+char		pop(Stack *stack)
+{
+	return stack->array[stack->top--];
+}
+
+int     check_stack(Stack *stack, char c, char *postfix, int index)
+{
+    if (is_operator(stack->array[stack->top]) > is_operator(c))
+    {
+        postfix[index] = pop(stack);
+        return (1);
+    }
+    else
+        push(stack, c);
+    return (0); 
+}
+
+int     is_digit(char c)
+{
+    if (c >= 48 && c <= 57)
+        return 1;
+    return (0);
+}
+
+void    append_operators(Stack *stack, char *postfix, int postfix_index)
+{
+
+    while (stack->top != -1)
+    {
+        postfix[postfix_index++] = stack->array[stack->top];
+        stack->top--;
+    }
+}
+
+int     is_operator(char c)
+{
+	if (c == '+')
+		return (1);
+	if (c == '-')
+		return (2);
+	if (c == '*')
+		return (3);
+	if (c == '/')
+		return (3);
+	if (c == '%')
+		return (3);
+	return (0);
+}
+
+int     perform_op(int a,   int b, char c)
+{
+    if (c == '%')
+        return a % b;
+    if (c == '*')
+        return a * b;
+    if (c == '/')
+        return a / b;   
+    if (c == '+')
+        return a + b;
+    if (c == '-')
+        return a - b;
+}
+
+int    sort_string(Stack *stack, char *infix, char *postfix, int infix_index, int postfix_index)
+{
+    while (infix[infix_index])
+    {
+        if (is_digit(infix[infix_index]))
+            postfix[postfix_index++] = infix[infix_index];
+        if (is_operator(infix[infix_index]))
+        {
+            postfix[postfix_index++] = ',';
+            while (check_stack(stack, infix[infix_index], postfix, postfix_index))
+                postfix_index++;
+        }
+        if (infix[infix_index] == '(')
+            push(stack, infix[infix_index]);
+        if (infix[infix_index] == ')')
+        {
+            while (stack->array[stack->top] != '(')
+                postfix[postfix_index++] = pop(stack);
+            pop(stack);
+        }
+        infix_index++;
+    }
+    return postfix_index;
+}
+
+int		ft_atoi(char *str)
+{
+		double sum;
+		int flag;
+
+		sum = 0;
+		flag = 1;
+		while ((*str >= 9 && *str <= 13) || *str == ' ' || *str == '0')
+			str++;
+		if (*str == '-')
+		{
+		    str++;
+		    flag = -1;
+		}
+		while (*str)
+		{
+			if (*str >= 48 && *str <= 57)
+				sum = (sum + (*str - 48)) * 10;
+			else
+				return (sum/10*flag);
+			str++;
+		}
+		return ((sum/10) * flag);
+}
+
+int     calculate_postfix(char *str, Stack *stack)
+{
+    stack->top = -1;
+    int result = 0;
+    int i = 0;
+    
+    while (*str)
+    {
+        if (is_digit(*str))
+        {
+            i = ft_atoi(str);
+            push_int(stack, i);
+            while(is_digit(*str))
+                str++;
+        }
+        if (is_operator(*str))
+        {
+            result = perform_op(pop_int(stack), pop_int(stack), *str);
+            push_int(stack, result);
+        }
+        str++;
+    }
+    return (result = pop_int(stack));
+}
+
+void	ft_putchar(char c)
+{
+	write(1, &c, 1);
+}
+
+void	ft_putnbr(int nb)
+{
+	int flag;
+
+	if (nb == -2147483648)
+	{
+		nb /= 10;
+		flag = 1;
+	}
+	if (nb < 0)
+	{
+		putchar('-');
+		nb *= -1;
+	}
+	if (nb > 9)
+	{
+		ft_putnbr(nb / 10);
+	}
+	nb %= 10;
+	putchar(nb + '0');
+	if (flag == 1)
+		putchar('8');
+}
+
+int    eval_expr(char *infix)
+{
+    int     infix_index;
+    int     postfix_index;
+    char    *postfix;
+    Stack   *stack;
+    int     result = 0;
+    infix_index = 0;
+    while (infix[infix_index])
+        infix_index++;
+    stack = createStack(infix_index);
+    postfix = (char *) malloc(sizeof(char) * (infix_index*2));
+    
+    infix_index = 0;
+    postfix_index = 0;
+
+    postfix_index = sort_string(stack, infix, postfix, infix_index, postfix_index);
+    append_operators(stack, postfix, postfix_index);
+    result = calculate_postfix(postfix, stack);
+    ft_putnbr(result);
+    return result;
+}
+
+int main()
+{  
+    int result = 0;
+    char *infix = "(5 - (2 + 1)) * 4 / 2";
+    char *str = eval_expr(infix);
+}
