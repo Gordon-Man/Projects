@@ -10,7 +10,7 @@ public class ConnectDB {
         Connection conn = null;
         String url       = "jdbc:mysql://localhost:3307/GEW?serverTimezone=UTC";
         String user      = "root";
-        String password  = "Loemak123";
+        String password  = "root";
 
         conn = DriverManager.getConnection(url, user, password);
 
